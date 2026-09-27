@@ -37,8 +37,8 @@ const paymentSchema = new mongoose.Schema(
 
     plan: {
       type: String,
+      enum: ["starter", "pro", "premium"],
       required: true,
-      enum: ["Starter", "Pro", "Premium"],
     },
 
     status: {
