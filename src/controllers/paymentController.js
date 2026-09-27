@@ -11,15 +11,15 @@ const razorpay = new Razorpay({
 });
 
 const plans = {
-  Starter: {
+  starter: {
     amount: 99,
     credits: 10,
   },
-  Pro: {
+  pro: {
     amount: 199,
     credits: 25,
   },
-  Premium: {
+  premium: {
     amount: 399,
     credits: 60,
   },
@@ -141,9 +141,7 @@ export const verifyPayment = async (req, res) => {
       )
       .digest("hex");
 
-    if (
-      generatedSignature !== razorpay_signature
-    ) {
+    if (generatedSignature !== razorpay_signature) {
       return res.status(400).json({
         success: false,
         message: "Invalid payment signature",
@@ -307,9 +305,7 @@ export const verifyPayment = async (req, res) => {
         "credits isPremium premiumExpiresAt"
       );
 
-      if (
-        existingPayment?.creditsApplied
-      ) {
+      if (existingPayment?.creditsApplied) {
         return res.status(200).json({
           success: true,
           message: "Payment already verified",
