@@ -1,5 +1,4 @@
 import "dotenv/config";
-
 import express from "express";
 import http from "http";
 import cors from "cors";
@@ -22,8 +21,15 @@ import jwt from "jsonwebtoken";
 import User from "./models/User.js";
 import Interview from "./models/Interview.js";
 
+import path from "path";
+import { fileURLToPath } from "url";
+
 const app = express();
 const server = http.createServer(app);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.use(express.static(path.join(__dirname, "../public")));
 
 connectDB();
 
