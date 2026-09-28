@@ -61,15 +61,18 @@ export const createOrder = async (req, res) => {
 
     return res.status(201).json({
       success: true,
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId: process.env.RAZORPAY_KEY_ID,
+      paymentId: payment._id,
+      plan,
+      credits: selectedPlan.credits,
       order: {
         id: order.id,
         amount: order.amount,
         currency: order.currency,
       },
-      paymentId: payment._id,
-      plan,
-      credits: selectedPlan.credits,
-      keyId: process.env.RAZORPAY_KEY_ID,
     });
   } catch (error) {
     console.error("Create Razorpay order error:", error);
@@ -126,8 +129,7 @@ export const verifyPayment = async (req, res) => {
         alreadyVerified: true,
         credits: user?.credits ?? 0,
         isPremium: Boolean(user?.isPremium),
-        premiumExpiresAt:
-          user?.premiumExpiresAt || null,
+        premiumExpiresAt: user?.premiumExpiresAt || null,
       });
     }
 
@@ -145,6 +147,26 @@ export const verifyPayment = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid payment signature",
+      });
+    }
+
+    const razorpayOrder =
+      await razorpay.orders.fetch(razorpay_order_id);
+
+    if (razorpayOrder.id !== razorpay_order_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Razorpay order",
+      });
+    }
+
+    if (
+      Number(razorpayOrder.amount) !==
+      Number(paymentRecord.amount * 100)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Order amount mismatch",
       });
     }
 
@@ -170,12 +192,9 @@ export const verifyPayment = async (req, res) => {
       });
     }
 
-    const expectedAmount =
-      paymentRecord.amount * 100;
-
     if (
       Number(razorpayPayment.amount) !==
-      Number(expectedAmount)
+      Number(paymentRecord.amount * 100)
     ) {
       return res.status(400).json({
         success: false,
@@ -185,8 +204,7 @@ export const verifyPayment = async (req, res) => {
 
     if (
       paymentRecord.paymentId &&
-      paymentRecord.paymentId !==
-        razorpay_payment_id
+      paymentRecord.paymentId !== razorpay_payment_id
     ) {
       return res.status(400).json({
         success: false,
@@ -233,29 +251,15 @@ export const verifyPayment = async (req, res) => {
           message: "Payment already verified",
           alreadyVerified: true,
           credits: user?.credits ?? 0,
-          isPremium: Boolean(
-            user?.isPremium
-          ),
+          isPremium: Boolean(user?.isPremium),
           premiumExpiresAt:
             user?.premiumExpiresAt || null,
         });
       }
 
-      if (
-        paymentRecord?.status === "paid" &&
-        !paymentRecord?.creditsApplied
-      ) {
-        return res.status(409).json({
-          success: false,
-          message:
-            "Payment is verified but credit processing is incomplete. Please retry.",
-        });
-      }
-
       return res.status(409).json({
         success: false,
-        message:
-          "Payment verification is already being processed",
+        message: "Payment verification is already being processed",
       });
     }
 
@@ -311,9 +315,7 @@ export const verifyPayment = async (req, res) => {
           message: "Payment already verified",
           alreadyVerified: true,
           credits: user?.credits ?? 0,
-          isPremium: Boolean(
-            user?.isPremium
-          ),
+          isPremium: Boolean(user?.isPremium),
           premiumExpiresAt:
             user?.premiumExpiresAt || null,
         });
@@ -384,6 +386,7 @@ export const verifyPayment = async (req, res) => {
       alreadyVerified: false,
       credits: user.credits,
       addedCredits: claimedPayment.credits,
+      plan: claimedPayment.plan,
       isPremium: user.isPremium,
       premiumExpiresAt:
         user.premiumExpiresAt,
